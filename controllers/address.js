@@ -1,5 +1,5 @@
 import {AddressModel} from "../models/address.js";
-import { addAddressValidator } from "../validators/address.js";
+import { addAddressValidator, updateAddressValidator } from "../validators/address.js";
 
 export const addAddress = async (req,res,next)=>{
     try {
@@ -42,7 +42,7 @@ export const getAddresses = async (req,res,next)=>{
         const addresses = await AddressModel
         .find(JSON.parse(filter))
         .sort(JSON.parse(sort))
-        .lomit(limit)
+        .limit(limit)
         .skip(skip);
          
         res.status(200).json(addresses);
@@ -52,10 +52,46 @@ export const getAddresses = async (req,res,next)=>{
     }
 }
 
-export const updateAddress = (req,res,next)=>{
-    res.json('Address was added');
+export const updateAddress = async (req,res,next)=>{
+    try {//validate the input
+        const{error,value} = updateAddressValidator.validate(req.body);
+        if(error){
+            return res.status(422).json(error);
+        }
+        // write updeted address to the database
+        const updatedAddress = await AddressModel.findOneAndUpdate({
+            _id: req.params.id,
+            user: req.auth.id
+        },
+        value,{new: true}
+    );
+    if(!updatedAddress){
+        return res.status(404).json({
+            message: 'Address not found'
+        });
+    }
+    //respond to request
+        res.status(201).json('Address was added');
+    } catch (error) {
+        next(error);  
+    }
 }
 
-export const deleteAddress = (req,res,next)=>{
-    res.json('Address was deleted');
-}
+export const deleteAddress =async (req,res,next)=>{
+    try {
+        const deletedAddress = await AddressModel.findOneAndDelete({
+            id: req.params.id,
+            user: req.auth.id
+        },
+    );
+    if(!deletedAddress){
+        return res.status(404).json({
+            message: 'Address not found'
+        });
+    }
+        res.status(200).json('Address was deleted');
+    } catch (error) {
+        next(error);
+        
+    }
+};
