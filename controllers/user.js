@@ -61,7 +61,6 @@ export const loginUser = async (req, res, next) => {
             message: 'User logged in',
             accessToken: token
         })
-        res.status(201).json('user logged in successfully ');
     } catch (error) {
         next(error);
 
@@ -104,13 +103,13 @@ export const logoutUser = (req, res) => {
 export const updateProfile =async (req, res, next) => {
     try {
         //validate user input
-        const { error, value } = updateProfileValidators.validate(req.body);
+        const { error, value } = updateProfileValidators.validate({
+            ...req.body,
+        });
         if (error) {
             return res.status(422).json(error);
         }
-        const updateAddress = await AddressModel.findByIdAndUpdate(req.params.id,req.body,{new:true});
-
-
+        await UserModel.findByIdAndUpdate(req.auth.id, value);
         res.json('user profile updated');
     } catch (error) {
         next(error);
